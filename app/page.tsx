@@ -1,5 +1,14 @@
-import {redirect} from "next/navigation";
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
 
-export default function page() {
-  redirect("/register");
+import { authOptions } from "@/app/lib/auth";
+
+export default async function HomePage() {
+  const session = await getServerSession(authOptions);
+
+  if (session?.user) {
+    redirect("/dashboard");
+  }
+
+  redirect("/login");
 }

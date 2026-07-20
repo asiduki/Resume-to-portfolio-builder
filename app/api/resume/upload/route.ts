@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/app/lib/auth";
-import {connectToDatabase} from "@/app/lib/db";
+import { connectToDatabase } from "@/app/lib/db";
 
 import Portfolio from "@/models/Portfolio";
 
 import { parseResume } from "@/app/lib/ai/resume-parser";
 import { portfolioPrompt } from "@/app/lib/ai/portfolio.prompt";
-import { generateWithGemini } from "@/app/lib/ai/ai.service";
+import { generatePortfolio } from "@/app/lib/ai/ai.service";
+import { parseGeneratedPortfolio } from "@/app/lib/ai/portfolio-parser";
 
 export async function POST(req: NextRequest) {
   try {
@@ -50,16 +51,48 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Extract Resume Text
+    // Extract text from resume
     const resumeText = await parseResume(file);
 
-    // Create Prompt
+    if (!resumeText || resumeText.trim().length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Could not extract any text from this PDF",
+        },
+        { status: 422 }
+      );
+    }
+
+    // Generate AI prompt
     const prompt = portfolioPrompt(resumeText);
 
-    // Generate Portfolio JSON
-    const portfolioData = await generateWithGemini(prompt);
+    // Generate Portfolio JSON using Aerolink + Claude
+    const rawResponse = await generatePortfolio(prompt);
 
-    // Check if portfolio already exists
+    let portfolioData;
+
+    try {
+      portfolioData = parseGeneratedPortfolio(rawResponse);
+    } catch (parseError) {
+      console.error("Failed to parse AI response:", parseError);
+      console.error(rawResponse);
+
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "The AI returned an invalid response. Please try again.",
+        },
+        { status: 422 }
+      );
+    }
+
+    const username = portfolioData.personal.name
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "-");
+
     const existingPortfolio = await Portfolio.findOne({
       userId: session.user.id,
     });
@@ -67,6 +100,7 @@ export async function POST(req: NextRequest) {
     let portfolio;
 
     if (existingPortfolio) {
+      existingPortfolio.username = username;
       existingPortfolio.personal = portfolioData.personal;
       existingPortfolio.skills = portfolioData.skills;
       existingPortfolio.projects = portfolioData.projects;
@@ -80,11 +114,10 @@ export async function POST(req: NextRequest) {
     } else {
       portfolio = await Portfolio.create({
         userId: session.user.id,
-        username: portfolioData.personal.name
-          .toLowerCase()
-          .replace(/\s+/g, "-"),
+        username,
 
         template: "modern",
+        published: false,
 
         personal: portfolioData.personal,
         skills: portfolioData.skills,
@@ -103,31 +136,21 @@ export async function POST(req: NextRequest) {
         message: "Portfolio generated successfully",
         portfolio,
       },
-      { status: 200 }
+      {
+        status: 200,
+      }
     );
   } catch (error) {
-    console.error(error);
+    console.error("Portfolio Generation Error:", error);
 
     return NextResponse.json(
       {
         success: false,
         message: "Failed to generate portfolio",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }
-
-
-// frontend req
-
-// const formData = new FormData();
-
-// formData.append("resume", file);
-
-// const res = await fetch("/api/resume/upload", {
-//   method: "POST",
-//   body: formData,
-// });
-
-// const data = await res.json();

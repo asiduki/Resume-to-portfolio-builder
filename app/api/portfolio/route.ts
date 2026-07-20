@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
-import dbConnect from "@/lib/dbConnect";
+import {connectToDatabase} from "@/app/lib/db";
 import Portfolio from "@/models/Portfolio";
-import { authOptions } from "../auth/[...nextauth]/options"; // Change path if needed
+import { authOptions } from "@/app/lib/auth"; // Change path if needed
 
 // ============================
 // GET Portfolio
@@ -11,7 +11,7 @@ import { authOptions } from "../auth/[...nextauth]/options"; // Change path if n
 
 export async function GET() {
   try {
-    await dbConnect();
+    await connectToDatabase();
 
     const session = await getServerSession(authOptions);
 
@@ -62,7 +62,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    await dbConnect();
+    await connectToDatabase();
 
     const session = await getServerSession(authOptions);
 
