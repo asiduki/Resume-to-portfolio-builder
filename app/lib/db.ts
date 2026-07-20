@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const MongoDB_URI =
-  process.env.MONGODB_URI || "mongodb://localhost:27017/mydatabase";
+  process.env.MONGODB_URI;
 
 if (!MongoDB_URI) {
   throw new Error(
