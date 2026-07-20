@@ -7,7 +7,6 @@ import {
   Loader2,
   Eye,
   AlertCircle,
-  CheckCircle2,
   RefreshCw,
 } from "lucide-react";
 
@@ -38,6 +37,18 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
+const AUTOSAVE_DELAY_MS = 2000;
+
+function formatSavedAt(date: Date): string {
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+
+  if (seconds < 5) return "just now";
+  if (seconds < 60) return `${seconds}s ago`;
+
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}m ago`;
+}
+
 export default function EditPortfolioPage() {
   const router = useRouter();
 
@@ -50,9 +61,17 @@ export default function EditPortfolioPage() {
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
   const [errors, setErrors] = useState<ValidationErrors>({});
+
+  // Forces a re-render every 15s so "Saved Xs ago" stays roughly accurate
+  // even when the user stops editing after a save.
+  const [, forceTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => forceTick((n) => n + 1), 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     fetchPortfolio();
@@ -98,26 +117,31 @@ export default function EditPortfolioPage() {
   function update(patch: Partial<EditablePortfolio>) {
     setPortfolio((prev) => (prev ? { ...prev, ...patch } : prev));
     setDirty(true);
-    setSaved(false);
   }
 
-  async function savePortfolio() {
-    if (!portfolio) return;
+  async function savePortfolio(options?: { silent?: boolean }) {
+    if (!portfolio) return false;
 
     const validationErrors = validatePortfolio(portfolio);
-    setErrors(validationErrors);
+
+    // Autosave never overwrites the error panel while the user is mid-typing —
+    // it just quietly waits for the fields to become valid on a later pass.
+    if (!options?.silent) {
+      setErrors(validationErrors);
+    }
 
     const errorKeys = Object.keys(validationErrors);
 
     if (errorKeys.length > 0) {
-      // Jump to the first tab that has a problem
-      setActiveTab(errorTab(errorKeys[0]) as TabId);
-      setSaveError(
-        `Please fix ${errorKeys.length} validation ${
-          errorKeys.length === 1 ? "error" : "errors"
-        } before saving.`
-      );
-      return;
+      if (!options?.silent) {
+        setActiveTab(errorTab(errorKeys[0]) as TabId);
+        setSaveError(
+          `Please fix ${errorKeys.length} validation ${
+            errorKeys.length === 1 ? "error" : "errors"
+          } before saving.`
+        );
+      }
+      return false;
     }
 
     try {
@@ -142,20 +166,41 @@ export default function EditPortfolioPage() {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        setSaveError(data.message || "Failed to save changes.");
-        return;
+        if (!options?.silent) {
+          setSaveError(data.message || "Failed to save changes.");
+        }
+        return false;
       }
 
       setPortfolio(data.portfolio);
       setDirty(false);
-      setSaved(true);
+      setLastSavedAt(new Date());
+      return true;
     } catch (err) {
       console.error(err);
-      setSaveError("Could not reach the server. Your changes are not saved.");
+      if (!options?.silent) {
+        setSaveError("Could not reach the server. Your changes are not saved.");
+      }
+      return false;
     } finally {
       setSaving(false);
     }
   }
+
+  // Autosave: fires AUTOSAVE_DELAY_MS after the last edit, as long as nothing
+  // else is already saving. If a save is in flight when new edits land,
+  // `saving` flips back to false afterwards, this effect re-runs (it's a dep),
+  // and — since `dirty` is still true — a fresh timer is scheduled.
+  useEffect(() => {
+    if (!dirty || !portfolio || saving) return;
+
+    const timer = setTimeout(() => {
+      savePortfolio({ silent: true });
+    }, AUTOSAVE_DELAY_MS);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [portfolio, dirty, saving]);
 
   // Count errors per tab for the badge indicators
   const tabErrorCounts = Object.keys(errors).reduce<Record<string, number>>(
@@ -214,20 +259,24 @@ export default function EditPortfolioPage() {
 
             <p className="text-sm text-slate-500">
               /portfolio/{portfolio.username}
-              {dirty && (
+              {saving && (
+                <span className="text-blue-600 ml-2 inline-flex items-center gap-1">
+                  <Loader2 className="animate-spin" size={12} />
+                  Saving...
+                </span>
+              )}
+              {!saving && dirty && (
                 <span className="text-amber-600 ml-2">• Unsaved changes</span>
+              )}
+              {!saving && !dirty && lastSavedAt && (
+                <span className="text-green-600 ml-2">
+                  • Saved {formatSavedAt(lastSavedAt)}
+                </span>
               )}
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            {saved && !dirty && (
-              <span className="hidden sm:flex items-center gap-1.5 text-green-600 text-sm">
-                <CheckCircle2 size={16} />
-                Saved
-              </span>
-            )}
-
             <button
               onClick={() => router.push("/dashboard/preview")}
               className="flex items-center gap-2 border border-slate-300 px-4 py-2.5 rounded-lg hover:bg-slate-50 text-sm font-medium"
@@ -237,7 +286,7 @@ export default function EditPortfolioPage() {
             </button>
 
             <button
-              onClick={savePortfolio}
+              onClick={() => savePortfolio()}
               disabled={saving || !dirty}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed
                 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
