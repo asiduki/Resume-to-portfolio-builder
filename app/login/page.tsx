@@ -37,7 +37,11 @@ function LoginForm() {
       });
 
       if (result?.error) {
-        setError("Invalid email or password.");
+        setError(
+          result.error.startsWith("Too many")
+            ? result.error
+            : "Invalid email or password."
+        );
         return;
       }
 

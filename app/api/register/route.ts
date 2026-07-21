@@ -1,12 +1,23 @@
 import {connectToDatabase} from "@/app/lib/db";
 import User from "@/models/usermodel";
 import { isUsernameTaken, USERNAME_REGEX } from "@/app/lib/username";
+import { rateLimit, getClientIp } from "@/app/lib/rate-limit";
 import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 import cloudinary from "@/app/lib/cloudinary";
 
 export async function POST(req: NextRequest) {
     try {
+        const ip = getClientIp(req.headers);
+        const { success, retryAfterSeconds } = rateLimit(`register:${ip}`, 5, 60 * 60 * 1000);
+
+        if (!success) {
+            return NextResponse.json(
+                { error: "Too many signup attempts. Please try again later." },
+                { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } }
+            );
+        }
+
         const formData = await req.formData();
         const name = formData.get("name") as string | null;
         const username = (formData.get("username") as string | null)?.trim().toLowerCase() || null;
