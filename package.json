@@ -2,6 +2,8 @@
   "name": "portfolio-studio",
   "version": "0.1.0",
   "private": true,
+  "author": "Udit Jadon",
+  "license": "MIT",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

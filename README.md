@@ -337,11 +337,16 @@ If you found this project helpful, consider giving it a ⭐ on GitHub!
 It motivates me to build more awesome open-source projects.
 
 ---
+## Attribution
+
+If you use this project as a base for your own work, please consider keeping the original credit:
+
+Built by **Udit Jadon**
+
+⭐ If this project helped you, please give the repository a star.
 
 <div align="center">
 
 ### Built with ❤️ using Next.js, TypeScript, MongoDB & AI
-
-⭐ Star this repository if you like it!
 
 </div>
