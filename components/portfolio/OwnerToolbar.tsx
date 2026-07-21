@@ -17,7 +17,6 @@ import CopyButton from "./CopyButton";
 import ShareButton from "./ShareButton";
 import DeployButton from "./DeployButton";
 import DownloadResumeButton from "./DownloadResumeButton";
-import AnalyticsButton from "./AnalyticsButton";
 import ThemeButton from "./ThemeButton";
 import ProfileImageButton from "./ProfileImageButton";
 import DeletePortfolioButton from "./DeletePortfolioButton";
@@ -158,7 +157,6 @@ export default function OwnerToolbar({
 
                   <ToolbarGroup label="Manage">
                     <DownloadResumeButton showToast={showToast} />
-                    <AnalyticsButton />
                     <DeletePortfolioButton showToast={showToast} />
                   </ToolbarGroup>
                 </div>

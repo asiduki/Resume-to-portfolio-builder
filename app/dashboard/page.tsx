@@ -5,7 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   AlertCircle,
-  BarChart3,
   Check,
   Copy,
   Eye,
@@ -155,7 +154,6 @@ export default function DashboardPage() {
     { href: "/dashboard/edit", label: "Continue Editing", icon: Pencil },
     { href: "/dashboard/preview", label: "Preview Portfolio", icon: Eye },
     { href: "/dashboard/templates", label: "Templates", icon: LayoutTemplate },
-    { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   ];
 
   return (
@@ -284,7 +282,7 @@ export default function DashboardPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:col-span-2">
           <h2 className="font-semibold text-slate-900">Quick Actions</h2>
 
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {quickActions.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}

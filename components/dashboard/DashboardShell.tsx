@@ -6,7 +6,6 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
-  BarChart3,
   Eye,
   LayoutDashboard,
   LayoutTemplate,
@@ -23,7 +22,6 @@ const NAV_ITEMS = [
   { href: "/dashboard/edit", label: "Edit Portfolio", icon: Pencil },
   { href: "/dashboard/templates", label: "Templates", icon: LayoutTemplate },
   { href: "/dashboard/preview", label: "Preview", icon: Eye },
-  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/dashboard/profile", label: "Profile", icon: User },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
