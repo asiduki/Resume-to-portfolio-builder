@@ -327,7 +327,6 @@ git push origin feature-name
 **Udit Jadon**
 
 - GitHub: https://github.com/asiduki
-- LinkedIn: *(Add your LinkedIn profile)*
 
 ---
 
