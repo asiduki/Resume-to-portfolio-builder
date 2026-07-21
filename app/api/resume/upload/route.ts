@@ -10,6 +10,7 @@ import { parseResume } from "@/app/lib/ai/resume-parser";
 import { portfolioPrompt } from "@/app/lib/ai/portfolio.prompt";
 import { generatePortfolio } from "@/app/lib/ai/ai.service";
 import { parseGeneratedPortfolio } from "@/app/lib/ai/portfolio-parser";
+import { generateUniqueUsername } from "@/app/lib/username";
 
 export async function POST(req: NextRequest) {
   try {
@@ -88,11 +89,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const username = portfolioData.personal.name
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "-");
-
     const existingPortfolio = await Portfolio.findOne({
       userId: session.user.id,
     });
@@ -100,7 +96,7 @@ export async function POST(req: NextRequest) {
     let portfolio;
 
     if (existingPortfolio) {
-      existingPortfolio.username = username;
+      // Keep the existing username so the public link never breaks
       existingPortfolio.personal = portfolioData.personal;
       existingPortfolio.skills = portfolioData.skills;
       existingPortfolio.projects = portfolioData.projects;
@@ -112,6 +108,12 @@ export async function POST(req: NextRequest) {
 
       portfolio = await existingPortfolio.save();
     } else {
+      // New portfolio: generate a collision-free username from the name
+      const username = await generateUniqueUsername(
+        portfolioData.personal.name,
+        session.user.id
+      );
+
       portfolio = await Portfolio.create({
         userId: session.user.id,
         username,
