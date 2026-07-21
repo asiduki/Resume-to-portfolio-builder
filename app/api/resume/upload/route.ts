@@ -10,7 +10,8 @@ import { parseResume } from "@/app/lib/ai/resume-parser";
 import { portfolioPrompt } from "@/app/lib/ai/portfolio.prompt";
 import { generatePortfolio } from "@/app/lib/ai/ai.service";
 import { parseGeneratedPortfolio } from "@/app/lib/ai/portfolio-parser";
-import { generateUniqueUsername } from "@/app/lib/username";
+import { ensureUserUsername } from "@/app/lib/username";
+import User from "@/models/usermodel";
 
 export async function POST(req: NextRequest) {
   try {
@@ -52,7 +53,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Extract text from resume
     const resumeText = await parseResume(file);
 
     if (!resumeText || resumeText.trim().length === 0) {
@@ -65,10 +65,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Generate AI prompt
     const prompt = portfolioPrompt(resumeText);
 
-    // Generate Portfolio JSON using Aerolink + Claude
     const rawResponse = await generatePortfolio(prompt);
 
     let portfolioData;
@@ -93,11 +91,25 @@ export async function POST(req: NextRequest) {
       userId: session.user.id,
     });
 
+    const user = await User.findById(session.user.id);
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    const accountImage = user.image?.startsWith("http") ? user.image : "";
+
     let portfolio;
 
     if (existingPortfolio) {
-      // Keep the existing username so the public link never breaks
-      existingPortfolio.personal = portfolioData.personal;
+      existingPortfolio.personal = {
+        ...portfolioData.personal,
+        profileImage:
+          existingPortfolio.personal?.profileImage || accountImage,
+      };
       existingPortfolio.skills = portfolioData.skills;
       existingPortfolio.projects = portfolioData.projects;
       existingPortfolio.experience = portfolioData.experience;
@@ -108,11 +120,7 @@ export async function POST(req: NextRequest) {
 
       portfolio = await existingPortfolio.save();
     } else {
-      // New portfolio: generate a collision-free username from the name
-      const username = await generateUniqueUsername(
-        portfolioData.personal.name,
-        session.user.id
-      );
+      const username = await ensureUserUsername(user);
 
       portfolio = await Portfolio.create({
         userId: session.user.id,
@@ -121,7 +129,10 @@ export async function POST(req: NextRequest) {
         template: "modern",
         published: false,
 
-        personal: portfolioData.personal,
+        personal: {
+          ...portfolioData.personal,
+          profileImage: accountImage,
+        },
         skills: portfolioData.skills,
         projects: portfolioData.projects,
         experience: portfolioData.experience,

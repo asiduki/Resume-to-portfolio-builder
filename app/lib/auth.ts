@@ -37,6 +37,9 @@ export const authOptions: NextAuthOptions = {
           return {
             id: user._id.toString(),
             email: user.email,
+            name: user.name,
+            // May be null for legacy users until ensureUserUsername backfills
+            username: user.username ?? null,
           };
         } catch (error) {
           console.error("Auth error: ", error);
@@ -46,15 +49,21 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    // NOTE: username in the JWT/session is a convenience only (greetings,
+    // fallbacks). It goes stale if the user renames themselves — pages must
+    // render usernames/links from /api/profile or /api/portfolio (DB is the
+    // source of truth), never from the session.
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.username = (user as { username?: string | null }).username ?? null;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
+        session.user.username = (token.username as string | null) ?? null;
       }
       return session;
     },

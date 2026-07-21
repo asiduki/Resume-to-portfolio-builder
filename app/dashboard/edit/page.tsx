@@ -65,8 +65,6 @@ export default function EditPortfolioPage() {
 
   const [errors, setErrors] = useState<ValidationErrors>({});
 
-  // Forces a re-render every 15s so "Saved Xs ago" stays roughly accurate
-  // even when the user stops editing after a save.
   const [, forceTick] = useState(0);
   useEffect(() => {
     const interval = setInterval(() => forceTick((n) => n + 1), 15000);
@@ -77,7 +75,6 @@ export default function EditPortfolioPage() {
     fetchPortfolio();
   }, []);
 
-  // Warn before leaving with unsaved changes
   useEffect(() => {
     function beforeUnload(e: BeforeUnloadEvent) {
       if (dirty) e.preventDefault();
@@ -124,8 +121,6 @@ export default function EditPortfolioPage() {
 
     const validationErrors = validatePortfolio(portfolio);
 
-    // Autosave never overwrites the error panel while the user is mid-typing —
-    // it just quietly waits for the fields to become valid on a later pass.
     if (!options?.silent) {
       setErrors(validationErrors);
     }
@@ -187,10 +182,6 @@ export default function EditPortfolioPage() {
     }
   }
 
-  // Autosave: fires AUTOSAVE_DELAY_MS after the last edit, as long as nothing
-  // else is already saving. If a save is in flight when new edits land,
-  // `saving` flips back to false afterwards, this effect re-runs (it's a dep),
-  // and — since `dirty` is still true — a fresh timer is scheduled.
   useEffect(() => {
     if (!dirty || !portfolio || saving) return;
 
@@ -202,7 +193,6 @@ export default function EditPortfolioPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [portfolio, dirty, saving]);
 
-  // Count errors per tab for the badge indicators
   const tabErrorCounts = Object.keys(errors).reduce<Record<string, number>>(
     (acc, key) => {
       const tab = errorTab(key);
@@ -249,7 +239,6 @@ export default function EditPortfolioPage() {
 
   return (
     <main className="min-h-screen bg-slate-100">
-      {/* Top bar */}
       <div className="sticky top-0 bg-white border-b border-slate-200 z-40">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 px-4 md:px-6 py-4">
           <div>
@@ -317,7 +306,6 @@ export default function EditPortfolioPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 grid lg:grid-cols-[220px_1fr] gap-8">
-        {/* Tabs — sidebar on desktop, horizontal scroll on mobile */}
         <nav
           className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible
             lg:sticky lg:top-28 lg:self-start -mx-4 px-4 lg:mx-0 lg:px-0 pb-2 lg:pb-0"
@@ -357,7 +345,6 @@ export default function EditPortfolioPage() {
           })}
         </nav>
 
-        {/* Active section */}
         <div className="min-w-0">
           {activeTab === "personal" && (
             <PersonalForm

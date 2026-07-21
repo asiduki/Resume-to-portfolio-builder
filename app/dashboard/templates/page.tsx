@@ -74,6 +74,10 @@ export default function TemplatesPage() {
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     fetchPortfolio();
@@ -98,6 +102,7 @@ export default function TemplatesPage() {
   async function saveTemplate() {
     try {
       setSaving(true);
+      setFeedback(null);
 
       const res = await fetch("/api/portfolio/update", {
         method: "PATCH",
@@ -112,14 +117,17 @@ export default function TemplatesPage() {
       const data = await res.json();
 
       if (!data.success) {
-        alert(data.message);
+        setFeedback({
+          type: "error",
+          text: data.message || "Failed to save template.",
+        });
         return;
       }
 
-      alert("Template Updated Successfully");
+      setFeedback({ type: "success", text: "Template updated successfully." });
     } catch (error) {
       console.error(error);
-      alert("Something went wrong");
+      setFeedback({ type: "error", text: "Something went wrong." });
     } finally {
       setSaving(false);
     }
@@ -136,21 +144,33 @@ export default function TemplatesPage() {
   return (
     <main className="max-w-7xl mx-auto px-6 py-10">
 
-      <div className="flex items-center justify-between mb-10">
+      <div className="flex items-center justify-between mb-6">
 
-        <h1 className="text-4xl font-bold">
+        <h1 className="text-4xl font-bold text-slate-900">
           Choose Template
         </h1>
 
         <button
           onClick={saveTemplate}
           disabled={saving}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg disabled:opacity-50"
         >
           {saving ? "Saving..." : "Save Template"}
         </button>
 
       </div>
+
+      {feedback && (
+        <div
+          className={`mb-8 rounded-lg border p-3 text-sm ${
+            feedback.type === "success"
+              ? "border-green-200 bg-green-50 text-green-700"
+              : "border-red-200 bg-red-50 text-red-700"
+          }`}
+        >
+          {feedback.text}
+        </div>
+      )}
 
       <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-8">
 
@@ -159,12 +179,12 @@ export default function TemplatesPage() {
           <div
             key={template.id}
             onClick={() => setSelectedTemplate(template.id)}
-            className={`cursor-pointer rounded-xl overflow-hidden border-2 transition
+            className={`cursor-pointer rounded-xl overflow-hidden border-2 bg-white transition
 
               ${
                 selectedTemplate === template.id
                   ? "border-blue-600"
-                  : "border-gray-300"
+                  : "border-slate-200 hover:border-slate-300"
               }
             `}
           >
@@ -175,7 +195,7 @@ export default function TemplatesPage() {
 
               <div className="flex justify-between items-center">
 
-                <h2 className="text-xl font-semibold">
+                <h2 className="text-xl font-semibold text-slate-900">
                   {template.name}
                 </h2>
 
@@ -185,7 +205,7 @@ export default function TemplatesPage() {
 
               </div>
 
-              <p className="text-gray-500 mt-3">
+              <p className="text-slate-500 mt-3">
                 {template.description}
               </p>
 
@@ -201,7 +221,7 @@ export default function TemplatesPage() {
 
         <button
           onClick={() => router.push("/dashboard/preview")}
-          className="bg-black text-white px-6 py-3 rounded-lg"
+          className="border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 px-6 py-3 rounded-lg"
         >
           Preview
         </button>

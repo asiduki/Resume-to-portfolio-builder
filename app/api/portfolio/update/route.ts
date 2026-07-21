@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/app/lib/auth";
 import {connectToDatabase} from "@/app/lib/db";
+import { normalizePortfolioUrls } from "@/app/lib/url";
 
 import Portfolio from "@/models/Portfolio";
 
@@ -26,6 +27,8 @@ export async function PATCH(req: NextRequest) {
 
     const body = await req.json();
 
+    normalizePortfolioUrls(body);
+
     const portfolio = await Portfolio.findOne({
       userId: session.user.id,
     });
@@ -42,7 +45,6 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    // Only update editable fields
     portfolio.personal = body.personal ?? portfolio.personal;
     portfolio.skills = body.skills ?? portfolio.skills;
     portfolio.projects = body.projects ?? portfolio.projects;

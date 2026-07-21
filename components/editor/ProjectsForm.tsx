@@ -12,6 +12,7 @@ import {
   ItemCard,
   moveItem,
 } from "./fields";
+import ImageUploader from "./ImageUploader";
 
 const EMPTY_PROJECT: IProject = {
   title: "",
@@ -65,14 +66,6 @@ export default function ProjectsForm({
               />
 
               <TextField
-                label="Image URL"
-                type="url"
-                value={project.image}
-                onChange={(v) => updateItem(index, { image: v })}
-                placeholder="https://..."
-              />
-
-              <TextField
                 label="GitHub URL"
                 type="url"
                 value={project.github}
@@ -92,6 +85,13 @@ export default function ProjectsForm({
             </div>
 
             <div className="mt-5 space-y-5">
+              <ImageUploader
+                label="Project Image"
+                value={project.image}
+                onChange={(image) => updateItem(index, { image })}
+                hint="Screenshot or cover image, shown on the project card."
+              />
+
               <TextAreaField
                 label="Description"
                 rows={3}

@@ -91,47 +91,57 @@ export default function CreativeTemplate({ portfolio }: TemplateProps) {
             {projects.map((project, index) => (
               <div
                 key={index}
-                className="group bg-white/5 backdrop-blur border border-white/10 rounded-3xl p-8 hover:border-fuchsia-500/50 hover:-translate-y-1 transition-all"
+                className="group bg-white/5 backdrop-blur border border-white/10 rounded-3xl overflow-hidden hover:border-fuchsia-500/50 hover:-translate-y-1 transition-all"
               >
-                <h3 className="text-2xl font-bold group-hover:text-fuchsia-300 transition-colors">
-                  {project.title}
-                </h3>
+                {project.image && (
+                  <img
+                    src={project.image}
+                    alt={project.title}
+                    className="w-full aspect-video object-cover border-b border-white/10"
+                  />
+                )}
 
-                <p className="mt-4 text-purple-100/70 leading-7">
-                  {project.description}
-                </p>
+                <div className="p-8">
+                  <h3 className="text-2xl font-bold group-hover:text-fuchsia-300 transition-colors">
+                    {project.title}
+                  </h3>
 
-                <div className="flex flex-wrap gap-2 mt-5">
-                  {project.technologies.map((tech, i) => (
-                    <span
-                      key={i}
-                      className="bg-purple-600/30 border border-purple-500/30 px-3 py-1 rounded-full text-sm"
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                </div>
+                  <p className="mt-4 text-purple-100/70 leading-7">
+                    {project.description}
+                  </p>
 
-                <div className="flex gap-5 mt-6">
-                  {project.github && (
-                    <a
-                      href={project.github}
-                      target="_blank"
-                      className="text-fuchsia-300 hover:text-fuchsia-200"
-                    >
-                      GitHub →
-                    </a>
-                  )}
+                  <div className="flex flex-wrap gap-2 mt-5">
+                    {project.technologies.map((tech, i) => (
+                      <span
+                        key={i}
+                        className="bg-purple-600/30 border border-purple-500/30 px-3 py-1 rounded-full text-sm"
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
 
-                  {project.liveDemo && (
-                    <a
-                      href={project.liveDemo}
-                      target="_blank"
-                      className="text-purple-300 hover:text-purple-200"
-                    >
-                      Live Demo →
-                    </a>
-                  )}
+                  <div className="flex gap-5 mt-6">
+                    {project.github && (
+                      <a
+                        href={project.github}
+                        target="_blank"
+                        className="text-fuchsia-300 hover:text-fuchsia-200"
+                      >
+                        GitHub →
+                      </a>
+                    )}
+
+                    {project.liveDemo && (
+                      <a
+                        href={project.liveDemo}
+                        target="_blank"
+                        className="text-purple-300 hover:text-purple-200"
+                      >
+                        Live Demo →
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

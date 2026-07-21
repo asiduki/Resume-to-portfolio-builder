@@ -1,5 +1,6 @@
 import {connectToDatabase} from "@/app/lib/db";
 import User from "@/models/usermodel";
+import { isUsernameTaken, USERNAME_REGEX } from "@/app/lib/username";
 import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 import cloudinary from "@/app/lib/cloudinary";
@@ -8,12 +9,20 @@ export async function POST(req: NextRequest) {
     try {
         const formData = await req.formData();
         const name = formData.get("name") as string | null;
+        const username = (formData.get("username") as string | null)?.trim().toLowerCase() || null;
         const email = formData.get("email") as string | null;
         const password = formData.get("password") as string | null;
         const file = formData.get("file") as File | null;
 
-        if (!name || !email || !password) {
+        if (!name || !username || !email || !password) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        }
+
+        if (!USERNAME_REGEX.test(username)) {
+            return NextResponse.json(
+                { error: "Username must be 3-30 characters; letters, numbers, hyphens and underscores only" },
+                { status: 400 }
+            );
         }
 
         if (file && (!file.type.startsWith("image/") || file.size > 2 * 1024 * 1024)) {
@@ -27,13 +36,18 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "User already exists" }, { status: 400 });
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10); 
+        if (await isUsernameTaken(username)) {
+            return NextResponse.json({ error: "Username already taken" }, { status: 400 });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         const user = await User.create({
             name,
+            username,
             email,
             password: hashedPassword,
-            image: file ? "" : "/avatar.png", 
+            image: file ? "" : "/avatar.png",
         });
 
         if (file) {
@@ -58,7 +72,11 @@ export async function POST(req: NextRequest) {
         }
 
         return NextResponse.json({ message: "User registered successfully" }, { status: 201 });
-    } catch (error) {
+    } catch (error: unknown) {
+        if (typeof error === "object" && error !== null && (error as { code?: number }).code === 11000) {
+            return NextResponse.json({ error: "Username or email already taken" }, { status: 400 });
+        }
+
         console.error("Error registering user:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }

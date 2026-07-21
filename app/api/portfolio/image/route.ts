@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/app/lib/auth";
-import { connectToDatabase } from "@/app/lib/db";
-import Portfolio from "@/models/Portfolio";
 import cloudinary from "@/app/lib/cloudinary";
 
 
+const MAX_SIZE = 4 * 1024 * 1024;
+
+function userFolder(userId: string) {
+  return `portfolio-images/${userId}`;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,37 +32,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!file.type.startsWith("image/") || file.size > 2 * 1024 * 1024) {
+    if (!file.type.startsWith("image/") || file.size > MAX_SIZE) {
       return NextResponse.json(
-        { success: false, message: "Must be an image under 2MB" },
+        { success: false, message: "Must be an image under 4MB" },
         { status: 400 }
-      );
-    }
-
-    await connectToDatabase();
-
-    const portfolio = await Portfolio.findOne({ userId: session.user.id });
-
-    if (!portfolio) {
-      return NextResponse.json(
-        { success: false, message: "Portfolio not found" },
-        { status: 404 }
       );
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-  
+   
     const result = await new Promise<{ secure_url: string }>(
       (resolve, reject) => {
         cloudinary.uploader
           .upload_stream(
             {
-              public_id: `portfolio-profiles/${session.user.id}`,
-              overwrite: true,
-              invalidate: true,
+              folder: userFolder(session.user.id),
               transformation: [
-                { width: 512, height: 512, crop: "fill", gravity: "face" },
+                { width: 1600, crop: "limit" },
                 { quality: "auto", fetch_format: "auto" },
               ],
             },
@@ -69,19 +59,12 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    portfolio.personal.profileImage = result.secure_url;
-    await portfolio.save();
-
     return NextResponse.json(
-      {
-        success: true,
-        message: "Profile image updated",
-        image: result.secure_url,
-      },
+      { success: true, message: "Image uploaded", url: result.secure_url },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Profile image upload error:", error);
+    console.error("Image upload error:", error);
 
     return NextResponse.json(
       { success: false, message: "Internal Server Error" },
@@ -91,8 +74,7 @@ export async function POST(req: NextRequest) {
 }
 
 
-
-export async function DELETE() {
+export async function DELETE(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -103,42 +85,35 @@ export async function DELETE() {
       );
     }
 
-    await connectToDatabase();
+    const { url } = await req.json();
 
-    const portfolio = await Portfolio.findOne({ userId: session.user.id });
-
-    if (!portfolio) {
+    if (typeof url !== "string" || !url) {
       return NextResponse.json(
-        { success: false, message: "Portfolio not found" },
-        { status: 404 }
-      );
-    }
-
-    if (!portfolio.personal.profileImage) {
-      return NextResponse.json(
-        { success: false, message: "No profile image to delete" },
+        { success: false, message: "No image URL provided" },
         { status: 400 }
       );
     }
 
-    try {
-      await cloudinary.uploader.destroy(
-        `portfolio-profiles/${session.user.id}`,
-        { invalidate: true }
+    
+    const match = url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[a-zA-Z0-9]+)?$/);
+    const publicId = match?.[1];
+
+    
+    if (!publicId || !publicId.startsWith(`${userFolder(session.user.id)}/`)) {
+      return NextResponse.json(
+        { success: false, message: "Not an image you can delete" },
+        { status: 400 }
       );
-    } catch (cloudinaryError) {
-      console.error("Cloudinary delete failed:", cloudinaryError);
     }
 
-    portfolio.personal.profileImage = "";
-    await portfolio.save();
+    await cloudinary.uploader.destroy(publicId, { invalidate: true });
 
     return NextResponse.json(
-      { success: true, message: "Profile image removed" },
+      { success: true, message: "Image deleted" },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Profile image delete error:", error);
+    console.error("Image delete error:", error);
 
     return NextResponse.json(
       { success: false, message: "Internal Server Error" },

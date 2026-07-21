@@ -8,7 +8,6 @@ import cloudinary from "@/app/lib/cloudinary";
   export async function POST(req: NextRequest) {
     try{
         const session = await getServerSession(authOptions);
-        console.log("Session:", session);
       if (!session?.user?.id) {
           return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }

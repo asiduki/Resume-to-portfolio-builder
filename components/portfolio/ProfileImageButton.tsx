@@ -125,7 +125,6 @@ export default function ProfileImageButton({ profileImage, showToast }: Props) {
                 </button>
               </div>
 
-              {/* Preview */}
               <div className="mt-5 flex justify-center">
                 {image ? (
                   <Image

@@ -62,47 +62,57 @@ export default function DeveloperTemplate({ portfolio }: TemplateProps) {
             {projects.map((project, index) => (
               <div
                 key={index}
-                className="border border-zinc-800 rounded-lg p-6 bg-zinc-900 hover:border-green-400 transition-colors"
+                className="border border-zinc-800 rounded-lg bg-zinc-900 overflow-hidden hover:border-green-400 transition-colors"
               >
-                <h3 className="text-xl font-semibold text-zinc-100">
-                  {project.title}
-                </h3>
+                {project.image && (
+                  <img
+                    src={project.image}
+                    alt={project.title}
+                    className="w-full aspect-video object-cover border-b border-zinc-800"
+                  />
+                )}
 
-                <p className="mt-3 text-zinc-400 text-sm leading-6">
-                  {project.description}
-                </p>
+                <div className="p-6">
+                  <h3 className="text-xl font-semibold text-zinc-100">
+                    {project.title}
+                  </h3>
 
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {project.technologies.map((tech, i) => (
-                    <span
-                      key={i}
-                      className="text-xs text-green-400 border border-green-400/40 px-2 py-0.5 rounded"
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                </div>
+                  <p className="mt-3 text-zinc-400 text-sm leading-6">
+                    {project.description}
+                  </p>
 
-                <div className="flex gap-4 mt-5 text-sm">
-                  {project.github && (
-                    <a
-                      href={project.github}
-                      target="_blank"
-                      className="text-green-400 underline underline-offset-4"
-                    >
-                      [source]
-                    </a>
-                  )}
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {project.technologies.map((tech, i) => (
+                      <span
+                        key={i}
+                        className="text-xs text-green-400 border border-green-400/40 px-2 py-0.5 rounded"
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
 
-                  {project.liveDemo && (
-                    <a
-                      href={project.liveDemo}
-                      target="_blank"
-                      className="text-green-400 underline underline-offset-4"
-                    >
-                      [demo]
-                    </a>
-                  )}
+                  <div className="flex gap-4 mt-5 text-sm">
+                    {project.github && (
+                      <a
+                        href={project.github}
+                        target="_blank"
+                        className="text-green-400 underline underline-offset-4"
+                      >
+                        [source]
+                      </a>
+                    )}
+
+                    {project.liveDemo && (
+                      <a
+                        href={project.liveDemo}
+                        target="_blank"
+                        className="text-green-400 underline underline-offset-4"
+                      >
+                        [demo]
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

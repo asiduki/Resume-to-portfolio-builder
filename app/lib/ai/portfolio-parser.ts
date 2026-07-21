@@ -8,6 +8,7 @@ import {
   ISocial,
   ISEO,
 } from "@/models/Portfolio/portfolio.types";
+import { normalizePortfolioUrls } from "@/app/lib/url";
 
 /** The JSON structure Gemini is instructed to return in portfolio.prompt.ts */
 export interface GeneratedPortfolio {
@@ -80,6 +81,10 @@ export function parseGeneratedPortfolio(raw: string): GeneratedPortfolio {
       portfolio[key] = [];
     }
   }
+
+  // Resumes often list bare links ("github.com/x") — make them absolute
+  // so template hrefs don't resolve relative to the portfolio URL.
+  normalizePortfolioUrls(portfolio);
 
   return portfolio as unknown as GeneratedPortfolio;
 }

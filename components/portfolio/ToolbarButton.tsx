@@ -34,7 +34,6 @@ export default function ToolbarButton({
     >
       {icon}
 
-      {/* Tooltip (desktop only) */}
       <span className="pointer-events-none absolute top-full mt-2 hidden whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 md:block">
         {label}
       </span>

@@ -3,13 +3,10 @@ import { getServerSession } from "next-auth";
 
 import {connectToDatabase} from "@/app/lib/db";
 import Portfolio from "@/models/Portfolio";
-import { authOptions } from "@/app/lib/auth"; // Change path if needed
+import { authOptions } from "@/app/lib/auth";
 import { slugifyName } from "@/app/lib/username";
 import cloudinary from "@/app/lib/cloudinary";
 
-// ============================
-// GET Portfolio
-// ============================
 
 export async function GET() {
   try {
@@ -57,9 +54,6 @@ export async function GET() {
     );
   }
 }
-// ============================
-// CREATE Portfolio
-// ============================
 
 export async function POST(req: NextRequest) {
   try {
@@ -105,7 +99,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Username is unique across all users — reject if taken
     const usernameTaken = await Portfolio.findOne({ username })
       .select("_id")
       .lean();
@@ -146,7 +139,6 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error(error);
 
-    // Duplicate key from the unique username index (race condition)
     if ((error as { code?: number })?.code === 11000) {
       return NextResponse.json(
         {
@@ -167,9 +159,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// ============================
-// DELETE Portfolio
-// ============================
+
 
 export async function DELETE() {
   try {
@@ -195,7 +185,6 @@ export async function DELETE() {
       );
     }
 
-    // Clean up the profile image on Cloudinary (best-effort)
     if (portfolio.personal?.profileImage) {
       try {
         await cloudinary.uploader.destroy(

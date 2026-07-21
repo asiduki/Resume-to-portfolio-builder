@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Eye, LayoutTemplate, Pencil } from "lucide-react";
+import {
+  ChevronDown,
+  Eye,
+  LayoutTemplate,
+  MoreHorizontal,
+  Pencil,
+} from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 
@@ -23,6 +29,24 @@ interface Props {
   profileImage?: string;
 }
 
+/** Labeled row inside the expanded panel. */
+function ToolbarGroup({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+        {label}
+      </p>
+      <div className="flex flex-wrap items-center gap-1">{children}</div>
+    </div>
+  );
+}
+
 export default function OwnerToolbar({
   username,
   name,
@@ -31,6 +55,7 @@ export default function OwnerToolbar({
 }: Props) {
   const router = useRouter();
 
+  const [expanded, setExpanded] = useState(false);
   const [toast, setToast] = useState("");
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -42,74 +67,107 @@ export default function OwnerToolbar({
 
   return (
     <>
-      {/* Floating toolbar — top right on desktop, bottom dock on mobile */}
+      
       <motion.div
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 260, damping: 24 }}
-        className="fixed inset-x-3 bottom-3 z-[60] md:inset-x-auto md:bottom-auto md:right-6 md:top-6"
+        className="fixed bottom-3 left-1/2 z-[60] w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2
+          md:bottom-auto md:left-auto md:right-6 md:top-6 md:w-auto md:max-w-none md:translate-x-0"
       >
-        <div className="flex items-center gap-1 overflow-x-auto rounded-2xl border border-white/40 bg-white/70 p-2 shadow-xl shadow-slate-900/10 backdrop-blur-xl">
-          {/* Status badge */}
-          <span
-            className={`mr-1 flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold
-              ${
-                published
-                  ? "bg-green-100 text-green-700"
-                  : "bg-slate-200 text-slate-600"
-              }
-            `}
-          >
+        <div className="rounded-2xl border border-white/40 bg-white/70 shadow-xl shadow-slate-900/10 backdrop-blur-xl">
+          
+          <div className="flex items-center gap-1 p-2">
+           
             <span
-              className={`h-1.5 w-1.5 rounded-full ${
-                published ? "bg-green-500" : "bg-slate-400"
-              }`}
+              className={`mr-1 flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold
+                ${
+                  published
+                    ? "bg-green-100 text-green-700"
+                    : "bg-slate-200 text-slate-600"
+                }
+              `}
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  published ? "bg-green-500" : "bg-slate-400"
+                }`}
+              />
+              {published ? "Published" : "Draft"}
+            </span>
+
+            <div className="h-6 w-px shrink-0 bg-slate-900/10" />
+
+            <ToolbarButton
+              icon={<Pencil size={18} />}
+              label="Edit Portfolio"
+              onClick={() => router.push("/dashboard/edit")}
             />
-            {published ? "Published" : "Draft"}
-          </span>
+            <ToolbarButton
+              icon={<Eye size={18} />}
+              label="Preview"
+              onClick={() => router.push("/dashboard/preview")}
+            />
 
-          <div className="h-6 w-px shrink-0 bg-slate-900/10" />
+            <PublishButton published={published} showToast={showToast} />
+            <ShareButton username={username} name={name} showToast={showToast} />
 
-          <ToolbarButton
-            icon={<Pencil size={18} />}
-            label="Edit Portfolio"
-            onClick={() => router.push("/dashboard/edit")}
-          />
-          <ToolbarButton
-            icon={<LayoutTemplate size={18} />}
-            label="Change Template"
-            onClick={() => router.push("/dashboard/templates")}
-          />
-          <ToolbarButton
-            icon={<Eye size={18} />}
-            label="Preview"
-            onClick={() => router.push("/dashboard/preview")}
-          />
+            <div className="h-6 w-px shrink-0 bg-slate-900/10" />
 
-          <div className="h-6 w-px shrink-0 bg-slate-900/10" />
+            <ToolbarButton
+              icon={
+                expanded ? (
+                  <ChevronDown size={18} />
+                ) : (
+                  <MoreHorizontal size={18} />
+                )
+              }
+              label={expanded ? "Less" : "More actions"}
+              onClick={() => setExpanded((v) => !v)}
+            />
+          </div>
 
-          <PublishButton published={published} showToast={showToast} />
-          <CopyButton username={username} showToast={showToast} />
-          <ShareButton username={username} name={name} showToast={showToast} />
-          <DeployButton username={username} />
+        
+          <AnimatePresence initial={false}>
+            {expanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="overflow-hidden"
+              >
+                <div className="space-y-3 border-t border-slate-900/10 p-3">
+                  <ToolbarGroup label="Share">
+                    <CopyButton username={username} showToast={showToast} />
+                    <DeployButton username={username} />
+                  </ToolbarGroup>
 
-          <div className="h-6 w-px shrink-0 bg-slate-900/10" />
+                  <ToolbarGroup label="Customize">
+                    <ToolbarButton
+                      icon={<LayoutTemplate size={18} />}
+                      label="Change Template"
+                      onClick={() => router.push("/dashboard/templates")}
+                    />
+                    <ThemeButton />
+                    <ProfileImageButton
+                      profileImage={profileImage}
+                      showToast={showToast}
+                    />
+                  </ToolbarGroup>
 
-          <ProfileImageButton
-            profileImage={profileImage}
-            showToast={showToast}
-          />
-          <DownloadResumeButton showToast={showToast} />
-          <AnalyticsButton />
-          <ThemeButton />
-
-          <div className="h-6 w-px shrink-0 bg-slate-900/10" />
-
-          <DeletePortfolioButton showToast={showToast} />
+                  <ToolbarGroup label="Manage">
+                    <DownloadResumeButton showToast={showToast} />
+                    <AnalyticsButton />
+                    <DeletePortfolioButton showToast={showToast} />
+                  </ToolbarGroup>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </motion.div>
 
-      {/* Toast */}
       <AnimatePresence>
         {toast && (
           <motion.div

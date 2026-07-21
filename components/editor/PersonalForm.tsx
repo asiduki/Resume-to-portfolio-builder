@@ -4,6 +4,7 @@ import { IPersonal } from "@/models/Portfolio/portfolio.types";
 
 import { SectionFormProps } from "./types";
 import { SectionCard, TextField } from "./fields";
+import ImageUploader from "./ImageUploader";
 
 export default function PersonalForm({
   value,
@@ -19,6 +20,16 @@ export default function PersonalForm({
       title="Personal Information"
       description="Basic details shown in your portfolio hero section."
     >
+      <div className="mb-6">
+        <ImageUploader
+          label="Profile Image"
+          aspect="square"
+          value={value.profileImage}
+          onChange={(v) => set("profileImage", v)}
+          hint="Shown in your portfolio hero. Square images work best."
+        />
+      </div>
+
       <div className="grid md:grid-cols-2 gap-5">
         <TextField
           label="Name"
