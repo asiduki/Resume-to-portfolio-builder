@@ -1,4 +1,5 @@
-import { PDFParse } from "pdf-parse";
+import "pdf-parse/worker";
+import { PDFParse } from 'pdf-parse';
 
 export async function parseResume(file: File) {
   const bytes = await file.arrayBuffer();
